@@ -190,6 +190,8 @@ sub tool_step2 {
     my @not_found;
     my @to_send;
 
+    my $add_unsubscribe_link = $cgi->param("add_unsubscribe_link");
+
     my $filename = $cgi->param("patrons");
     if( $filename ){
         my ( $name, $path, $extension ) = fileparse( $filename, '.csv' );
@@ -222,7 +224,7 @@ sub tool_step2 {
         $csv->column_names(@$column_names);
 
         while ( my $hr = $csv->getline_hr($fh_in) ) {
-            my $email = generate_email( $hr, $body_template, $subject, $is_html, $notice );
+            my $email = generate_email( $hr, $body_template, $subject, $is_html, $notice, $add_unsubscribe_link );
             if( $email ){
                 push @to_send, $email;
             } else {
@@ -250,7 +252,7 @@ sub tool_step2 {
                 print $template->output();
                 return;
             }
-            my $email = generate_email( $row, $body_template, $subject, $is_html, $notice );
+            my $email = generate_email( $row, $body_template, $subject, $is_html, $notice, $add_unsubscribe_link );
             if( $email ){
                 push @to_send, $email;
             } else {
@@ -272,11 +274,12 @@ sub tool_step2 {
 }
 
 sub generate_email {
-    my $line          = shift;
-    my $body_template = shift;
-    my $subject       = shift;
-    my $is_html       = shift;
-    my $notice        = shift;
+    my $line                  = shift;
+    my $body_template         = shift;
+    my $subject               = shift;
+    my $is_html               = shift;
+    my $notice                = shift;
+    my $add_unsubscribe_link  = shift;
 
     my $branchcode = $notice ? $notice->branchcode || '_' : '_';
     my $module     = $notice ? $notice->module            : 'BUILT_IN';
@@ -290,17 +293,19 @@ sub generate_email {
     my $borrower = Koha::Patrons->find( { cardnumber => $line->{cardnumber} } );
     return unless $borrower;
 
-    my $base_url = C4::Context->preference('OPACBaseURL');
+    if( $add_unsubscribe_link ) {
+        my $base_url = C4::Context->preference('OPACBaseURL');
 
-    my $salt = C4::Context->config('patron_emailer_salt') || '8374892734834839';
-    my $cardnumber = $borrower->cardnumber;
-    my $hash = md5_hex( $salt . $borrower->id );
-    my $unsubscribe_link
-        = "$base_url/api/v1/contrib/patronemailer/patrons/unsubscribe/$hash/$cardnumber/$branchcode/$module/$code";
-    if ( $is_html ) {
-        $body .= qq{<p>You received this email from your library.<br/>If you would like to unsubscribe, click <a href="$unsubscribe_link">here</a>.};
-    } else {
-        $body .= qq{\n\nYou received this email from your library.\nIf you would like to unsubscribe, open this link in a web browser: $unsubscribe_link};
+        my $salt = C4::Context->config('patron_emailer_salt') || '8374892734834839';
+        my $cardnumber = $borrower->cardnumber;
+        my $hash = md5_hex( $salt . $borrower->id );
+        my $unsubscribe_link
+            = "$base_url/api/v1/contrib/patronemailer/patrons/unsubscribe/$hash/$cardnumber/$branchcode/$module/$code";
+        if ( $is_html ) {
+            $body .= qq{<p>You received this email from your library.<br/>If you would like to unsubscribe, click <a href="$unsubscribe_link">here</a>.};
+        } else {
+            $body .= qq{\n\nYou received this email from your library.\nIf you would like to unsubscribe, open this link in a web browser: $unsubscribe_link};
+        }
     }
 
     my $prepped_email =
