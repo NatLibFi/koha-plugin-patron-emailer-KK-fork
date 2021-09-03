@@ -90,6 +90,13 @@
             </p>
 
         </fieldset>
+
+        <fieldset id="preferences">
+            <legend>Preferences</legend>
+            <label for="add_unsubscribe_link">Add unsubscribe hash link at the end of the message:</label>
+            <input id="add_unsubscribe_link" type="checkbox" name="add_unsubscribe_link">
+        </fieldset>
+
         <input name="submitted" type="submit" value="Next..." />
     </form>
 [% MACRO jsinclude BLOCK %]
