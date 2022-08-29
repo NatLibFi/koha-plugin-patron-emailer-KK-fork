@@ -289,7 +289,6 @@ sub generate_email {
     my $borrower = Koha::Patrons->find( { cardnumber => $line->{cardnumber} } );
     return unless $borrower;
 
-    my $library_name = C4::Context->preference('LibraryName');
     my $base_url = C4::Context->preference('OPACBaseURL');
 
     my $salt = C4::Context->config('patron_emailer_salt') || '8374892734834839'; 
