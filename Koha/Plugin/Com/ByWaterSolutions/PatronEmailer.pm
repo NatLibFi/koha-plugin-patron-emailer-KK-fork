@@ -11,6 +11,7 @@ use Koha::Database;
 use Koha::Notice::Templates;
 use Koha::Patrons;
 use Koha::Reports;
+use Koha::DateUtils qw( dt_from_string );
 
 use DateTime;
 use Digest::MD5 qw(md5_hex);
@@ -350,7 +351,8 @@ sub tool_step3 {
             status => $status,
             to_address => $to_address[$i],
             from_address => $from_address[$i],
-            letter_code => $letter_code || 'PEP'
+            letter_code => $letter_code || 'PEP',
+	    time_queued => dt_from_string,
         });
 
     }
