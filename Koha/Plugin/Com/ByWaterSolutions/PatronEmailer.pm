@@ -312,7 +312,6 @@ sub generate_email {
             status                 => 'pending',
             to_address             => $line->{email},
             from_address           => $line->{from} || C4::Context->preference('KohaAdminEmailAddress'),
-
             branchcode => $branchcode,
             module => $module,
             code => $code,
@@ -345,13 +344,16 @@ sub tool_step3 {
         $message_queue_rs->create({
             borrowernumber => $borrowernumber[$i],
             subject => $subject[$i],
-            content => $is_html ? _wrap_html($content[$i],$subject[$i]) : $content[$i],
+            content => $is_html ? _wrap_html( $content[$i], $subject[$i] ) : $content[$i],
+            (
+                $is_html ? content_type => 'text/html; charset="UTF-8"' : ()
+            ),
             message_transport_type => $to_address[$i] ne "" ? 'email' : 'print',
             status => $status,
             to_address => $to_address[$i],
             from_address => $from_address[$i],
             letter_code => $letter_code || 'PEP',
-	    time_queued => dt_from_string,
+            time_queued => dt_from_string,
         });
 
     }
