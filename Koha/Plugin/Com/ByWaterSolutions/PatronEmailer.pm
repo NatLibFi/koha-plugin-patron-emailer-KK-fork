@@ -35,7 +35,7 @@ our $metadata = {
     description     => 'This plugin takes a Koha patrons file and sends an email to the patrons found in the file',
     date_authored   => '2015-06-18',
     date_updated    => '1900-01-01',
-    minimum_version => '3.1800000',
+    minimum_version => '21.1100000',
     maximum_version => undef,
     version         => $VERSION,
 };
