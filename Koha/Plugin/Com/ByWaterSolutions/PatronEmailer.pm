@@ -346,7 +346,7 @@ sub tool_step3 {
             subject => $subject[$i],
             content => $is_html ? _wrap_html( $content[$i], $subject[$i] ) : $content[$i],
             (
-                $is_html ? content_type => 'text/html; charset="UTF-8"' : ()
+                $is_html ? ( content_type => 'text/html; charset="UTF-8"' ) : ()
             ),
             message_transport_type => $to_address[$i] ne "" ? 'email' : 'print',
             status => $status,
