@@ -47,7 +47,7 @@
                 [% END %]
 
             </p>
-              
+
 
             <p>
                 <label for="subject">Email subject: </label>

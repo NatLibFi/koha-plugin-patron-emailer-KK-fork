@@ -116,7 +116,7 @@ sub get_unsubscribe_page {
 
     my $cgi = CGI->new;
     $self->{cgi} = $cgi;
-    
+
     my $filename = $args->{filename};
 
     my $template = $self->get_opac_template( { file => $filename } );
@@ -292,16 +292,16 @@ sub generate_email {
 
     my $base_url = C4::Context->preference('OPACBaseURL');
 
-    my $salt = C4::Context->config('patron_emailer_salt') || '8374892734834839'; 
+    my $salt = C4::Context->config('patron_emailer_salt') || '8374892734834839';
     my $cardnumber = $borrower->cardnumber;
     my $hash = md5_hex( $salt . $borrower->id );
     my $unsubscribe_link
         = "$base_url/api/v1/contrib/patronemailer/patrons/unsubscribe/$hash/$cardnumber/$branchcode/$module/$code";
     if ( $is_html ) {
-		$body .= qq{<p>You received this email from your library.<br/>If you would like to unsubscribe, click <a href="$unsubscribe_link">here</a>.};
+        $body .= qq{<p>You received this email from your library.<br/>If you would like to unsubscribe, click <a href="$unsubscribe_link">here</a>.};
     } else {
-		$body .= qq{\n\nYou received this email from your library.\nIf you would like to unsubscribe, open this link in a web browser: $unsubscribe_link};
-    } 
+        $body .= qq{\n\nYou received this email from your library.\nIf you would like to unsubscribe, open this link in a web browser: $unsubscribe_link};
+    }
 
     my $prepped_email =
         {
