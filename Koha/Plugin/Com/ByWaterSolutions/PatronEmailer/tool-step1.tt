@@ -20,7 +20,7 @@
             Patron Emailer
         </li>
         <li>
-            Upload file
+            Choose report and template
         </li>
     </ol>
 </nav>
@@ -90,7 +90,7 @@
             </p>
 
         </fieldset>
-        <input name="submitted" type="submit" value="Upload" />
+        <input name="submitted" type="submit" value="Next..." />
     </form>
 [% MACRO jsinclude BLOCK %]
     <script>
