@@ -4,7 +4,7 @@ You can choose to specify a template in the tool configuration or use an existin
 
 The plugin will record the letter code in the database as "PEP\_" + letter code  or "PEP_BUILT_IN" for a notice specified in the tool
 
-The CSV file must 
+The CSV file must
 
 - Start with a header line which names the columns used
 - Contain a column titled `cardnumber` containing the card numbers of the patrons to be emailed.
@@ -26,7 +26,7 @@ If you set the following email text under configuration:
 
     You have a balance of $[% fines %]
 
-    Please pay these at [% libraryname %] 
+    Please pay these at [% libraryname %]
 
 Then click the `Run Tool` link, you will be prompted to upload `Mailer-Report.csv`, which will send an email to each borrower in the file. Make sure that the variables being expanded (e.g. `[% firstname %]`) *exactly* match the column headers.
 
@@ -37,8 +37,8 @@ For example, an email containing the following content would be sent to Aaron Sp
     You have a balance of $0.40
 
     Please pay these at The Spelling Schoool
-    
-# Details    
+
+# Details
 To send the emails:
 * Run the desired report
 * Save the results as CSV
@@ -46,8 +46,7 @@ To send the emails:
   * Save the file on your computer
 * Run the plugin
  * Browse to More->Tools->Tool plugins
- * Click Actions -> Configure 
+ * Click Actions -> Configure
  * Ensure the message is setup as you wish
- * Click Actions -> Run 
+ * Click Actions -> Run
  * Upload the CSV file you saved in step 2
-

@@ -30,7 +30,7 @@
     <form id="emailer_settings" method="post" enctype="multipart/form-data">
         <input type="hidden" name="class" value="[% CLASS | html %]"/>
         <input type="hidden" name="method" value="[% METHOD | html %]"/>
-        
+
         <fieldset id="data">
              <legend>Patrons to email</legend>
              <p><label for="patrons">Upload a file:</label>
@@ -79,7 +79,7 @@
                 <option value="pos" data-text="Point of sale">Point of sale</option>
             </select>
             </br>
-           
+
             <label for="letter">Choose a notice</label>
             <select id="letter" name="letter">
                 <option value="">Please choose a letter</option>
@@ -133,7 +133,7 @@
                 }
             });
         });
-            
+
     </script>
 [% END %]
 
