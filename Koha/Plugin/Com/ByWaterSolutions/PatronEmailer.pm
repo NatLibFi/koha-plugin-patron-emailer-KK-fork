@@ -30,7 +30,7 @@ our $VERSION = "{VERSION}";
 
 ## Here is our metadata, some keys are required, some are optional
 our $metadata = {
-    name            => 'Patron Emailer',
+    name            => '[KK-fork] Patron Emailer',
     author          => 'Kyle M Hall',
     description     => 'This plugin takes a Koha patrons file and sends an email to the patrons found in the file',
     date_authored   => '2015-06-18',
