@@ -22,6 +22,7 @@ use File::Spec;
 use File::Find;
 
 =head1 DESCRIPTION
+
 =cut
 
 my $lib = '/var/lib/koha/kohadev/plugins'; # Could be changed to $Bin/..
