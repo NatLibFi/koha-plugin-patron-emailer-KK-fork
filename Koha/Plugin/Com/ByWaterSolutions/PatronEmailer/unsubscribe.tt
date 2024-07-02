@@ -20,6 +20,7 @@
 <div class="main">
  [% UNLESS unsubscribe_type %]
   <form action="/api/v1/contrib/patronemailer/patrons/unsubscribe/[% patron_id_hash | uri %]/[% cardnumber | uri %]/[% branchcode | uri%]/[% module | uri %]/[% code | uri %]">
+    [% INCLUDE 'csrf-token.inc' %]
     <h3>Email Preferences</h3>
 
     [% IF code != 'BUILT_IN' %]
