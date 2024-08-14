@@ -42,7 +42,7 @@
     Here is a preview of your emails:
 </div>
 <form method="post" enctype="multipart/form-data">
-    [% INCLUDE 'csrf-token.inc' %]
+    [% IF koha_version >= '24.05'; INCLUDE 'csrf-token.inc'; END %]
     <input type="hidden" name="class" value="[% CLASS | html %]"/>
     <input type="hidden" name="method" value="[% METHOD | html %]"/>
     <input type="hidden" name="step3" value="step3"/>

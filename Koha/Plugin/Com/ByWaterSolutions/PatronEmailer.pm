@@ -157,6 +157,8 @@ sub tool_step1 {
     my $cgi = $self->{cgi};
 
     my $template = $self->get_template( { file => 'tool-step1.tt' } );
+    $template->param( koha_version => C4::Context->preference('Version') );
+
     my $letters = Koha::Notice::Templates->search( {}, { order_by=>['me.branchcode','me.module','me.name'] } );
     my $subject = $self->retrieve_data('subject');
     $template->param( letters => $letters, subject => $subject );
@@ -169,7 +171,7 @@ sub tool_step2 {
     my ( $self, $args ) = @_;
     my $cgi = $self->{cgi};
     my $template = $self->get_template( { file => 'tool-step2.tt' } );
-
+    $template->param( koha_version => C4::Context->preference('Version') );
 
     my ( $body_template, $subject, $letter_code, $is_html );
     my $notice;
@@ -327,7 +329,10 @@ sub generate_email {
 sub tool_step3 {
     my ( $self, $args ) = @_;
     my $cgi = $self->{cgi};
+
     my $template = $self->get_template( { file => 'tool-step3.tt' } );
+    $template->param( koha_version => C4::Context->preference('Version') );
+
     my @borrowernumber = $cgi->multi_param('borrowernumber');
     my @branchcode = $cgi->multi_param('branchcode');
     my @module = $cgi->multi_param('module');
@@ -376,7 +381,10 @@ sub configure {
     my $cgi = $self->{cgi};
 
     unless ( $cgi->param('save') ) {
+
         my $template = $self->get_template( { file => 'configure.tt' } );
+        $template->param( koha_version => C4::Context->preference('Version') );
+
         my $delimiter = $self->retrieve_data('delimiter');
         $delimiter = ',' if( ! defined($delimiter) || ! $delimiter );
 

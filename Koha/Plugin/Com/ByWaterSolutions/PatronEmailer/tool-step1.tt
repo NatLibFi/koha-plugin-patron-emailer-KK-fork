@@ -28,7 +28,7 @@
 <div class="main container-fluid" id="doc3">
 
     <form id="emailer_settings" method="post" enctype="multipart/form-data">
-        [% INCLUDE 'csrf-token.inc' %]
+        [% IF koha_version >= '24.05'; INCLUDE 'csrf-token.inc'; END %]
         <input type="hidden" name="class" value="[% CLASS | html %]"/>
         <input type="hidden" name="method" value="[% METHOD | html %]"/>
 
