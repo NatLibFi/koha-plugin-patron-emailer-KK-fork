@@ -1,4 +1,4 @@
-package Koha::Plugin::Com::ByWaterSolutions::PatronEmailer;
+package Koha::Plugin::Fi::NatLib::PatronEmailer;
 
 ## It's good practice to use Modern::Perl
 use Modern::Perl;

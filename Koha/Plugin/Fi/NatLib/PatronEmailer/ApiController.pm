@@ -1,4 +1,4 @@
-package Koha::Plugin::Com::ByWaterSolutions::PatronEmailer::ApiController;
+package Koha::Plugin::Fi::NatLib::PatronEmailer::ApiController;
 
 # This file is part of Koha.
 #
@@ -21,7 +21,7 @@ use Mojo::Base 'Mojolicious::Controller';
 
 use Digest::MD5 qw(md5_hex);
 
-use Koha::Plugin::Com::ByWaterSolutions::PatronEmailer;
+use Koha::Plugin::Fi::NatLib::PatronEmailer;
 
 =head1 API
 
@@ -43,7 +43,7 @@ sub unsubscribe {
     my $code = $c->validation->param('code');
     my $unsubscribe_type = $c->validation->param('unsubscribe_type');
 
-    my $plugin = Koha::Plugin::Com::ByWaterSolutions::PatronEmailer->new;
+    my $plugin = Koha::Plugin::Fi::NatLib::PatronEmailer->new;
     my $template = $plugin->get_unsubscribe_page({ filename => 'unsubscribe.tt' });
 
     my $borrower = Koha::Patrons->find( { cardnumber => $cardnumber } );
