@@ -17,7 +17,7 @@ use DateTime;
 use Digest::MD5 qw(md5_hex);
 use File::Basename;
 use List::Util qw( any );
-use Mojo::JSON qw(decode_json);
+use Mojo::JSON qw(encode_json decode_json);
 use Text::CSV;
 
 use Template;
@@ -263,16 +263,118 @@ sub tool_step2 {
         }
     }
 
+    my $notice_id       = $notice ? $notice->id : undef;
+    my $report_id       = $cgi->param("report_id");
+    my $schedule_notice = $cgi->param("schedule_notice") ? 1 : 0;
+    my $use_built_in    = $cgi->param('use_built_in')    ? 1 : 0;
+    my $opts            = {
+        add_unsubscribe_link => $add_unsubscribe_link,
+        notice_id            => $notice_id,
+        report_id            => $report_id,
+        use_built_in         => $use_built_in,
+    };
+    $opts = encode_json($opts);
 
     $template->param(
         not_found => \@not_found,
         sent      => \@to_send,
         is_html   => $is_html,
         letter_code => 'PEP_' . $letter_code,
+        opts            => $opts,
+        schedule_notice => $schedule_notice,
     );
 
     print $cgi->header("text/html;charset=UTF-8");
     print $template->output();
+}
+
+sub schedule_notice {
+    my ( $self, $opts ) = @_;
+
+    $opts ||= {};
+
+    return unless $opts->{report_id};
+    return if !$opts->{notice_id} && !$opts->{use_built_in};
+
+    my $scheduled_notices_json = $self->retrieve_data('scheduled_notices');
+    $scheduled_notices_json ||= '{}';
+    my $scheduled_notices = decode_json($scheduled_notices_json);
+
+    my $notice_id = $opts->{notice_id} ? $opts->{notice_id} : 'BUILT_IN';
+    my $key       = 'report_id_' . $opts->{report_id} . '_notice_id_' . $notice_id;
+    $scheduled_notices->{$key} = $opts;
+    $opts->{scheduled_on} = dt_from_string;
+
+    $self->store_data(
+        {
+            'scheduled_notices' => encode_json($scheduled_notices),
+        }
+    );
+}
+
+sub cronjob_nightly {
+    my ($self) = @_;
+
+    my $scheduled_notices_json = $self->retrieve_data('scheduled_notices');
+    return 1 unless $scheduled_notices_json;
+
+    my $scheduled_notices = decode_json($scheduled_notices_json);
+
+    my $schema = Koha::Database->new()->schema();
+
+    my $message_queue_rs = $schema->resultset('MessageQueue');
+    foreach my $key ( keys %$scheduled_notices ) {
+        my $scheduled_notice     = $scheduled_notices->{$key};
+        my $notice_id            = $scheduled_notice->{notice_id};
+        my $add_unsubscribe_link = $scheduled_notice->{add_unsubscribe_link} || 0;
+        my ( $notice, $body_template, $subject, $letter_code, $is_html );
+        if ( "$notice_id" eq 'BUILT_IN' ) {
+            $body_template = $self->retrieve_data('body');
+            $subject       = $self->retrieve_data('subject');
+            $is_html       = $self->retrieve_data('is_html');
+            $letter_code   = "BUILT_IN";
+        } else {
+            $notice        = Koha::Notice::Templates->find( { id => $notice_id } );
+            $body_template = $notice->content;
+            $subject       = $notice->title;
+            $letter_code   = $notice->code;
+            $is_html       = $notice->is_html;
+        }
+        my $report_id = $scheduled_notice->{report_id};
+        my $report    = Koha::Reports->find($report_id);
+        my $sql       = $report->savedsql;
+        my ( $sth, $errors );
+
+        if ( C4::Context->preference('Version') ge '21.060000' ) {
+            ( $sth, $errors ) =
+                execute_query( { sql => $sql } );   #don't pass offset or limit, hardcoded limit of 999,999 will be used
+        } else {
+            ( $sth, $errors ) =
+                execute_query($sql);                #don't pass offset or limit, hardcoded limit of 999,999 will be used
+        }
+
+        while ( my $row = $sth->fetchrow_hashref() ) {
+            unless ( defined $row->{cardnumber} ) {
+                warn "report_id $report_id, notice_id $notice_id: no cardnumber";
+                last;
+            }
+            my $email = generate_email( $row, $body_template, $subject, $is_html, $notice, $add_unsubscribe_link );
+            $message_queue_rs->create(
+                {
+                    borrowernumber => $email->{borrowernumber},
+                    subject        => $email->{subject},
+                    content        => $is_html ? _wrap_html( $email->{content}, $email->{subject} ) : $email->{content},
+                    ( $is_html ? ( content_type => 'text/html; charset="UTF-8"' ) : () ),
+                    message_transport_type => $email->{to_address} ? 'email' : 'print',
+                    status                 => $email->{status},
+                    to_address             => $email->{to_address},
+                    from_address           => $email->{from_address},
+                    letter_code            => $email->{code} || 'PEP',
+                    time_queued            => dt_from_string,
+                }
+            );
+        }
+    }
 }
 
 sub generate_email {
@@ -317,7 +419,7 @@ sub generate_email {
             content                => $body,
             message_transport_type => 'email',
             status                 => 'pending',
-            to_address             => $line->{email},
+            to_address             => $line->{email} || $borrower->email,
             from_address           => $line->{from} || C4::Context->preference('KohaAdminEmailAddress'),
             branchcode => $branchcode,
             module => $module,
@@ -344,6 +446,7 @@ sub tool_step3 {
     my $schema           = Koha::Database->new()->schema();
     my $message_queue_rs = $schema->resultset('MessageQueue');
     my $letter_code = $cgi->param('letter_code');
+    my $notice_id = $cgi->param('notice_id');
     my $is_html = $cgi->param('is_html');
     for( my $i = 0; $i < @borrowernumber; $i++ ){
         my $key = "unsub-$borrowernumber[$i]-$module[$i],$code[$i]";
@@ -368,6 +471,15 @@ sub tool_step3 {
 
     }
     $template->param( sent => 1 );
+
+    my $opts_param      = $cgi->param("opts");
+    my $opts            = decode_json($opts_param);
+    my $schedule_notice = $cgi->param("schedule_notice") ? 1 : 0;
+    if ( $schedule_notice && $opts->{report_id} && ( $opts->{notice_id} || $opts->{use_built_in} ) ) {
+        $self->schedule_notice($opts);
+        $template->param( scheduled => 1 );
+    }
+
     print $cgi->header("text/html;charset=UTF-8");
     print $template->output();
 }
@@ -394,10 +506,46 @@ sub configure {
         $template->param( is_html   => $self->retrieve_data('is_html'), );
         $template->param( delimiter => $delimiter, );
 
+        my $scheduled_notices_json = $self->retrieve_data('scheduled_notices');
+        $scheduled_notices_json ||= '{}';
+        my $scheduled_notices = decode_json($scheduled_notices_json);
+        foreach my $key ( keys %$scheduled_notices ) {
+            $scheduled_notices->{$key}->{id} = $key;
+            $scheduled_notices->{$key}->{id} =~ /report_id_(\d+)_notice_id_([0-9A-Z_]+)/;
+            my ( $report_id, $notice_id ) = ( $1, $2 );
+            my $report      = Koha::Reports->find($report_id);
+            my $report_name = $report ? $report->report_name : '-';
+            my $letter_code;
+            if ( $notice_id =~ /^\d+$/ ) {
+                my $notice = Koha::Notice::Templates->find( { id => $notice_id } );
+                $letter_code = $notice ? $notice->code : '-';
+            } elsif ( $notice_id eq 'BUILT_IN' ) {
+                $letter_code = $notice_id;
+            } else {
+                $letter_code = '-';
+            }
+            $scheduled_notices->{$key}->{report_name} = $report_name;
+            $scheduled_notices->{$key}->{letter_code} = $letter_code;
+        }
+        $template->param( scheduled_notices => $scheduled_notices );
+
         print $cgi->header("text/html;charset=UTF-8");
         print $template->output();
     }
     else {
+        my $scheduled_notices_json = $self->retrieve_data('scheduled_notices');
+        $scheduled_notices_json ||= '{}';
+        my $scheduled_notices = decode_json($scheduled_notices_json);
+
+        foreach my $param_key ( keys %{ $cgi->Vars } ) {
+            if ( $param_key =~ /^delete_report_id_(\d+)_notice_id_([0-9A-Z_]+)$/ && $cgi->param($param_key) ) {
+                $param_key =~ s/^delete_//;
+                delete $scheduled_notices->{$param_key};
+            }
+        }
+
+        $scheduled_notices_json = encode_json($scheduled_notices);
+
         $self->store_data(
             {
                 body               => $cgi->param('body')|| "",
@@ -405,6 +553,7 @@ sub configure {
                 delimiter          => $cgi->param('delimiter') || "",
                 is_html            => $cgi->param('is_html') || "",
                 last_configured_by => C4::Context->userenv->{number},
+                scheduled_notices  => $scheduled_notices_json,
             }
         );
     }

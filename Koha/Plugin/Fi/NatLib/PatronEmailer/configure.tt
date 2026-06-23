@@ -78,6 +78,31 @@ Last name: [% lastname %]
             </pre>
 
 
+            <p>
+            <h3 id="delete_scheduled">Delete scheduled notices</h3>
+            <table>
+            <thead>
+            <tr>
+            <th>ID</th>
+            <th>Report name</th>
+            <th>Letter code</th>
+            <th>Scheduled on</th>
+            <th>Delete</th>
+            </tr>
+            </thead>
+            <tbody>
+            [% FOREACH sr_key IN scheduled_notices.keys %]
+            <tr>
+            <td><label for="delete_[% scheduled_notices.$sr_key.id | html %]">[% scheduled_notices.$sr_key.id | html %]</label></td>
+            <td>[% scheduled_notices.$sr_key.report_name %]</td>
+            <td>[% scheduled_notices.$sr_key.letter_code %]</td>
+            <td>[% scheduled_notices.$sr_key.scheduled_on %]</td>
+            <td><input type="checkbox" name="delete_[% scheduled_notices.$sr_key.id | html %]" id="delete_[% scheduled_notices.$sr_key.id | html %]" /></td>
+            </tr>
+            [% END %]
+            </tbody>
+            </table>
+            </p>
             <input type="hidden" name="save" value="1" />
 
             <input type="submit" value="Save configuration" />

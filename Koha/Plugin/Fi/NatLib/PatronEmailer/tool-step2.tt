@@ -68,6 +68,8 @@
                 <input type="hidden" name="branchcode" value="[% email.branchcode | html %]" />
                 <input type="hidden" name="module" value="[% email.module | html %]" />
                 <input type="hidden" name="code" value="[% email.code | html %]" />
+                <input type="hidden" name="opts" value="[% opts | html %]" />
+                <input type="hidden" name="schedule_notice" value="[% schedule_notice | html %]" />
             </td>
             <td>[% email.subject | html %]<input type="hidden" name="subject" value="[% email.subject | html %]" /></td>
             <td>
@@ -84,7 +86,27 @@
     [% END %]
     </tbody>
 </table>
+  <label for="schedule_notice">Schedule this notice to be run daily:</label>
+  <input id="schedule_notice" type="checkbox" name="schedule_notice"[% IF schedule_notice %] checked="checked"[% END %]>
+  <br />
   <input type="submit" value="Send emails"/>
+</form>
+[% ELSIF ( schedule_notice && !no_cardnumber ) %]
+<div class="main container-fluid" id="doc3">
+    No cardnumbers were currently retrieved, but we can still schedule this report:
+</div>
+<form method="post" enctype="multipart/form-data">
+    [% IF koha_version >= '24.05'; INCLUDE 'csrf-token.inc'; END %]
+    <input type="hidden" name="op" value="cud-pep_save"/>
+    <input type="hidden" name="class" value="[% CLASS | html %]"/>
+    <input type="hidden" name="method" value="[% METHOD | html %]"/>
+    <input type="hidden" name="step3" value="step3"/>
+    <input type="hidden" name="letter_code" value="[% letter_code | html %]"/>
+    <input type="hidden" name="is_html" value="[% is_html | html %]"/>
+    <input type="hidden" name="opts" value="[% opts | html %]" />
+  <input id="schedule_notice" type="hidden" name="schedule_notice" value="1">
+  <br />
+  <input type="submit" value="Schedule report"/>
 </form>
 [% END %]
 [% IF ( no_cardnumber ) %]
