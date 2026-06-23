@@ -6,6 +6,8 @@ use Modern::Perl;
 ## Required for all plugins
 use base qw(Koha::Plugins::Base);
 
+use C4::Context;
+use C4::Languages;
 use C4::Reports::Guided qw( execute_query );
 use Koha::Database;
 use Koha::Notice::Templates;
@@ -159,7 +161,18 @@ sub tool_step1 {
     my $template = $self->get_template( { file => 'tool-step1.tt' } );
     $template->param( koha_version => C4::Context->preference('Version') );
 
-    my $letters = Koha::Notice::Templates->search( {}, { order_by=>['me.branchcode','me.module','me.name'] } );
+    my $translated_languages = C4::Languages::getTranslatedLanguages(
+        'opac',
+        C4::Context->preference('template')
+    );
+    my $default_language = @{ @{$translated_languages}[0]->{sublanguages_loop} }[0]->{rfc4646_subtag};
+    my $letters = Koha::Notice::Templates->search(
+        { message_transport_type => 'email' },
+        {
+            order_by => [ 'me.branchcode', 'me.name' ],
+            group_by => ['me.code']
+        }
+    );
     my $subject = $self->retrieve_data('subject');
     $template->param( letters => $letters, subject => $subject );
 
@@ -283,17 +296,72 @@ sub generate_email {
     my $notice                = shift;
     my $add_unsubscribe_link  = shift;
 
+    my $borrower = Koha::Patrons->find( { cardnumber => $line->{cardnumber} } );
+    return unless $borrower;
+
+    if ( $notice && $borrower->lang && $notice->lang ne $borrower->lang ) {
+
+        # Get localized notice for this patron
+        my $localized_notice = Koha::Notice::Templates->find_effective_template(
+            {
+                lang                   => $borrower->lang,
+                code                   => $notice->code,
+                module                 => $notice->module,
+                branchcode             => $notice->branchcode,
+                message_transport_type => $notice->message_transport_type,
+            }
+        );
+        if ( $localized_notice && $localized_notice->id != $notice->id ) {
+            $notice        = $localized_notice;
+            $body_template = $notice->content;
+            $subject       = $notice->title;
+            $is_html       = $notice->is_html;
+        }
+    }
+
     my $branchcode = $notice ? $notice->branchcode || '_' : '_';
     my $module     = $notice ? $notice->module            : 'BUILT_IN';
     my $code       = $notice ? $notice->code              : 'BUILT_IN';
 
-    my $template = Template->new({ENCODING => 'utf8'});
-
     my $body;
-    $template->process( \$body_template, $line, \$body );
-
-    my $borrower = Koha::Patrons->find( { cardnumber => $line->{cardnumber} } );
-    return unless $borrower;
+    if ($notice) {
+        my $letter = C4::Letters::GetPreparedLetter(
+            module                 => $notice->module,
+            letter_code            => $notice->code,
+            lang                   => $notice->lang,
+            message_transport_type => $notice->message_transport_type,
+            substitute             => $line,
+            tables                 => {
+                borrowers => $borrower->borrowernumber,
+                branches  => $borrower->branchcode,
+            }
+        );
+        $body    = $letter->{content};
+        $subject = $letter->{title};
+    } else {
+        $body = C4::Letters::_process_tt(
+            {
+                content    => $body_template,
+                lang       => $borrower->lang && $borrower->lang ne 'default' ? $borrower->lang : 'en',
+                substitute => $line,
+                tables     => {
+                    borrowers => $borrower->borrowernumber,
+                    branches  => $borrower->branchcode,
+                }
+            }
+        );
+        $subject = C4::Letters::_process_tt(
+            {
+                content    => $subject,
+                lang       => $borrower->lang && $borrower->lang ne 'default' ? $borrower->lang : 'en',
+                substitute => $line,
+                tables     => {
+                    borrowers => $borrower->borrowernumber,
+                    branches  => $borrower->branchcode,
+                }
+            }
+        );
+    }
 
     if( $add_unsubscribe_link ) {
         my $base_url = C4::Context->preference('OPACBaseURL');
