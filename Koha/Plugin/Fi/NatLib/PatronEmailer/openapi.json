@@ -1,7 +1,7 @@
 {
   "/patrons/unsubscribe/{patron_id_hash}/{cardnumber}/{branchcode}/{module}/{code}": {
     "get": {
-      "x-mojo-to": "Com::ByWaterSolutions::PatronEmailer::ApiController#unsubscribe",
+      "x-mojo-to": "Fi::NatLib::PatronEmailer::ApiController#unsubscribe",
       "operationId": "LandingPage",
       "tags": [
         "patrons"
