@@ -25,7 +25,8 @@
 
 [% IF ( sent) %]
 <div class="main container-fluid" id="doc3">
-    Your emails have been scheduled for delivery!
+    <p>Your emails have been scheduled for delivery!</p>
+    [% IF ( scheduled ) %]<p>This email has been scheduled to be run daily.</p>[% END %]
 </div>
 [% END %]
 

@@ -88,7 +88,7 @@
                     <option data-branch="[% letter.branchcode | html %]" data-module="[% letter.module | html %]" value="[% letter.id | html %]">[% letter.name | html %] ( [% Branches.GetName(letter.branchcode) || "All" | html %] | [% letter.module | html %] | [% letter.message_transport_type | html %] ) </option>
                 [% END %]
             </select>
-            </p>
+            </p> 
 
         </fieldset>
 
@@ -96,6 +96,11 @@
             <legend>Preferences</legend>
             <label for="add_unsubscribe_link">Add unsubscribe hash link at the end of the message:</label>
             <input id="add_unsubscribe_link" type="checkbox" name="add_unsubscribe_link">
+            <br />
+            <label for="schedule_notice">Schedule this notice to be run daily:</label>
+            <input id="schedule_notice" type="checkbox" name="schedule_notice">
+            <br />
+            <p>To delete a scheduled notice, please navigate to <a href="/cgi-bin/koha/plugins/run.pl?class=Koha%3A%3APlugin%3A%3AFi%3A%3ANatLib%3A%3APatronEmailer&method=configure#delete_scheduled" target="_blank">plugin configuration</a>.
         </fieldset>
 
         <input name="submitted" type="submit" value="Next..." />

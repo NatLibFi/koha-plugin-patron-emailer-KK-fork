@@ -50,3 +50,16 @@ To send the emails:
  * Ensure the message is setup as you wish
  * Click Actions -> Run
  * Upload the CSV file you saved in step 2
+
+## Scheduling reports
+
+This plugin is able to use the `plugins_nightly.pl` cronjob.
+
+It allows you to create an SQL report and have it email patrons daily.
+
+To do it:
+1. Create a SQL report
+2. Navigate to Tools->[KK-fork] Patron Emailer
+3. Enter report id
+4. Choose a notice
+5. Check "Schedule this report to be run daily"
